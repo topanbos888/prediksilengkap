@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard Prediksi</title>
+<style>
+  /* ====== RESET & BASE ====== */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --gold: #d4af37;
+    --gold-light: #f5e6a8;
+    --gold-dark: #a8862a;
+    --bg-dark: #05060a;
+    --bg-mid: #0d1018;
+    --glass: rgba(255,255,255,0.04);
+    --glass-border: rgba(212,175,55,0.25);
+  }
+
+  html, body {
+    height: 100%;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    overflow-x: hidden;
+  }
+
+  body {
+    background:
+      radial-gradient(circle at 20% 20%, rgba(212,175,55,0.08), transparent 45%),
+      radial-gradient(circle at 80% 80%, rgba(80,120,255,0.06), transparent 45%),
+      linear-gradient(160deg, var(--bg-dark) 0%, var(--bg-mid) 50%, #080a10 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    color: #fff;
+  }
+
+  /* ====== EFEK PETIR LATAR (SVG ANIMASI) ====== */
+  .lightning-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+    opacity: 0.55;
+  }
+
+  .lightning-bg svg {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Petir bergerak: garis dash + opacity berkedip */
+  .bolt path {
+    fill: none;
+    stroke: var(--gold-light);
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 0 6px var(--gold)) drop-shadow(0 0 18px rgba(212,175,55,0.7));
+    stroke-dasharray: 300;
+    stroke-dashoffset: 300;
+    animation: boltFlash 6s infinite;
+  }
+
+  .bolt path:nth-child(2) { animation-delay: 0.25s; stroke-width: 1.2; opacity: 0.7; }
+  .bolt path:nth-child(3) { animation-delay: 0.5s; stroke-width: 0.8; opacity: 0.4; }
+
+  @keyframes boltFlash {
+    0%, 88%, 100% { stroke-dashoffset: 300; opacity: 0; }
+    90% { stroke-dashoffset: 0; opacity: 1; }
+    93% { stroke-dashoffset: 0; opacity: 0.3; }
+    95% { stroke-dashoffset: 0; opacity: 0.9; }
+    97% { stroke-dashoffset: 0; opacity: 0.2; }
+  }
+
+  /* Kilatan cahaya global saat petir */
+  .flash-overlay {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at 50% 30%, rgba(255,245,200,0.35), transparent 60%);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1;
+    animation: flashPulse 6s infinite;
+    mix-blend-mode: screen;
+  }
+
+  @keyframes flashPulse {
+    0%, 88%, 100% { opacity: 0; }
+    90% { opacity: 0.9; }
+    92% { opacity: 0.1; }
+    94% { opacity: 0.6; }
+    96% { opacity: 0; }
+  }
+
+  /* ====== KONTEN UTAMA ====== */
+  .dashboard {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    max-width: 960px;
+    padding: 40px 24px;
+    text-align: center;
+    animation: fadeUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ====== LOGO / JUDUL ====== */
+  .brand {
+    margin-bottom: 12px;
+    font-size: clamp(1.6rem, 4.5vw, 2.6rem);
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 40%, #fff8dc 60%, var(--gold-dark) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 20px rgba(212,175,55,0.35));
+  }
+
+  .subtitle {
+    font-size: clamp(0.72rem, 2vw, 0.9rem);
+    letter-spacing: 0.45em;
+    text-transform: uppercase;
+    color: rgba(245, 230, 168, 0.6);
+    margin-bottom: 56px;
+    font-weight: 400;
+  }
+
+  /* garis emas dekoratif */
+  .divider {
+    width: 120px;
+    height: 2px;
+    margin: 0 auto 56px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    position: relative;
+  }
+  .divider::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 8px;
+    height: 8px;
+    transform: translate(-50%, -50%) rotate(45deg);
+    background: var(--gold);
+    box-shadow: 0 0 14px var(--gold);
+  }
+
+  /* ====== GRID TOMBOL ====== */
+  .button-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 28px;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  @media (max-width: 640px) {
+    .button-grid { grid-template-columns: 1fr; gap: 22px; }
+    .subtitle { margin-bottom: 40px; }
+  }
+
+  /* ====== KARTU TOMBOL ====== */
+  .btn-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 42px 24px;
+    border-radius: 22px;
+    text-decoration: none;
+    color: #fff;
+    background:
+      linear-gradient(145deg, rgba(255,255,255,0.06), rgba(255,255,255,0.01));
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    overflow: hidden;
+    cursor: pointer;
+    transition:
+      transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 0.45s ease,
+      border-color 0.45s ease;
+    box-shadow:
+      0 8px 32px rgba(0,0,0,0.55),
+      inset 0 1px 0 rgba(255,255,255,0.08);
+    isolation: isolate;
+  }
+
+  /* Kilau emas menyapu (sheen) */
+  .btn-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -120%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(
+      100deg,
+      transparent 20%,
+      rgba(255,245,200,0.18) 50%,
+      transparent 80%
+    );
+    transform: skewX(-20deg);
+    transition: left 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 1;
+    pointer-events: none;
+  }
+  .btn-card:hover::before { left: 130%; }
+
+  /* Glow border animasi */
+  .btn-card::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: 23px;
+    padding: 1px;
+    background: linear-gradient(135deg, var(--gold), transparent 40%, transparent 60%, var(--gold));
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.45s ease;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .btn-card:hover::after { opacity: 1; }
+
+  .btn-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    border-color: rgba(212,175,55,0.6);
+    box-shadow:
+      0 24px 60px rgba(0,0,0,0.7),
+      0 0 40px rgba(212,175,55,0.22),
+      inset 0 1px 0 rgba(255,255,255,0.15);
+  }
+
+  .btn-card:active {
+    transform: translateY(-3px) scale(0.99);
+  }
+
+  /* Ikon */
+  .btn-icon {
+    width: 64px;
+    height: 64px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, rgba(212,175,55,0.25), rgba(212,175,55,0.04));
+    border: 1px solid rgba(212,175,55,0.35);
+    box-shadow: 0 0 22px rgba(212,175,55,0.18), inset 0 0 14px rgba(212,175,55,0.12);
+    transition: transform 0.5s cubic-bezier(0.16,1,0.3,1), box-shadow 0.5s ease;
+    z-index: 2;
+  }
+
+  .btn-card:hover .btn-icon {
+    transform: scale(1.1) rotate(-4deg);
+    box-shadow: 0 0 34px rgba(212,175,55,0.45), inset 0 0 18px rgba(212,175,55,0.25);
+  }
+
+  .btn-icon svg {
+    width: 32px;
+    height: 32px;
+    stroke: var(--gold-light);
+    fill: none;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 0 4px rgba(212,175,55,0.6));
+  }
+
+  /* Teks tombol */
+  .btn-title {
+    font-size: clamp(1.05rem, 2.6vw, 1.3rem);
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, #fff 0%, var(--gold-light) 55%, var(--gold) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    z-index: 2;
+  }
+
+  .btn-desc {
+    font-size: 0.72rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.45);
+    font-weight: 400;
+    z-index: 2;
+    transition: color 0.4s ease;
+  }
+  .btn-card:hover .btn-desc { color: rgba(245,230,168,0.85); }
+
+  /* Panah kecil */
+  .btn-arrow {
+    margin-top: 6px;
+    font-size: 0.8rem;
+    color: var(--gold);
+    opacity: 0;
+    transform: translateX(-8px);
+    transition: all 0.45s cubic-bezier(0.16,1,0.3,1);
+    z-index: 2;
+    letter-spacing: 0.2em;
+  }
+  .btn-card:hover .btn-arrow {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  /* ====== FOOTER ====== */
+  .footer-note {
+    margin-top: 64px;
+    font-size: 0.68rem;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.22);
+  }
+
+  /* ====== PARTIKEL DEBU HALUS ====== */
+  .particles {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .particle {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    border-radius: 50%;
+    background: rgba(245,230,168,0.7);
+    box-shadow: 0 0 6px rgba(212,175,55,0.8);
+    animation: floatUp linear infinite;
+    opacity: 0;
+  }
+
+  @keyframes floatUp {
+    0% { transform: translateY(0) scale(0.6); opacity: 0; }
+    10% { opacity: 0.8; }
+    90% { opacity: 0.4; }
+    100% { transform: translateY(-110vh) scale(1); opacity: 0; }
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- ===== LATAR PETIR ANIMASI ===== -->
+  <div class="lightning-bg" aria-hidden="true">
+    <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+      <!-- Petir 1 -->
+      <g class="bolt">
+        <path d="M220,0 L260,180 L200,200 L280,420 L210,440 L320,700" />
+        <path d="M240,0 L250,120 L225,150 L265,300" />
+        <path d="M250,180 L240,260 L275,340" />
+      </g>
+      <!-- Petir 2 -->
+      <g class="bolt" style="animation-delay: 2s;">
+        <path d="M1180,0 L1140,220 L1210,240 L1120,480 L1200,500 L1080,780" />
+        <path d="M1160,0 L1170,160 L1145,190 L1185,340" />
+        <path d="M1140,220 L1155,320 L1110,400" />
+      </g>
+      <!-- Petir 3 (tengah, lebih redup) -->
+      <g class="bolt" style="animation-delay: 4s; opacity: 0.5;">
+        <path d="M700,0 L680,150 L740,170 L660,360 L730,380 L640,600" />
+        <path d="M690,0 L695,100 L670,130 L705,250" />
+      </g>
+    </svg>
+  </div>
+
+  <!-- Kilatan cahaya global -->
+  <div class="flash-overlay" aria-hidden="true"></div>
+
+  <!-- Partikel debu -->
+  <div class="particles" id="particles" aria-hidden="true"></div>
+
+  <!-- ===== KONTEN DASHBOARD ===== -->
+  <main class="dashboard">
+
+    <h1 class="brand">PREDIKSI VIP</h1>
+    <p class="subtitle">Premium Access</p>
+    <div class="divider"></div>
+
+    <div class="button-grid">
+
+      <!-- ================= TOMBOL 1: PREDIKSI TOGEL ================= -->
+      <!-- GANTI href DI BAWAH DENGAN LINK ANDA -->
+      <a href="http://gopath.id/link_topanbos88/blog/?title=Prediksi%20Togel%20Topanbos88" class="btn-card" id="btnTogel">
+        <span class="btn-icon">
+          <!-- ikon bola angka / dadu togel -->
+          <svg viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="9"/>
+            <circle cx="12" cy="12" r="3.2"/>
+            <path d="M12 3v3.5M12 17.5V21M3 12h3.5M17.5 12H21"/>
+          </svg>
+        </span>
+        <span class="btn-title">Prediksi Togel</span>
+        <span class="btn-desc">Angka Jitu Hari Ini</span>
+        <span class="btn-arrow">MASUK &#8594;</span>
+      </a>
+
+      <!-- ================= TOMBOL 2: PREDIKSI BOLA ================= -->
+      <!-- GANTI href DI BAWAH DENGAN LINK ANDA -->
+      <a href="http://gopath.id/link_topanbos88/blog/?title=Prediksi%20Bola%20Topanbos88" class="btn-card" id="btnBola">
+        <span class="btn-icon">
+          <!-- ikon bola sepak -->
+          <svg viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M12 7.2l3.4 2.5-1.3 4h-4.2l-1.3-4L12 7.2z"/>
+            <path d="M12 3.2v4M4.4 9.6l3.6 1.2M19.6 9.6l-3.6 1.2M7.2 19.4l1.5-3.6M16.8 19.4l-1.5-3.6M12 20.8v-3.4"/>
+          </svg>
+        </span>
+        <span class="btn-title">Prediksi Bola</span>
+        <span class="btn-desc">Pertandingan Terupdate</span>
+        <span class="btn-arrow">MASUK &#8594;</span>
+      </a>
+
+    </div>
+
+    <p class="footer-note">© 2025 Prediksi VIP • All Rights Reserved</p>
+  </main>
+
+  <!-- ===== SCRIPT PARTIKEL ===== -->
+  <script>
+    (function () {
+      const container = document.getElementById('particles');
+      const count = 28;
+      for (let i = 0; i < count; i++) {
+        const p = document.createElement('span');
+        p.className = 'particle';
+        p.style.left = Math.random() * 100 + '%';
+        p.style.bottom = '-10px';
+        const dur = 9 + Math.random() * 12;
+        p.style.animationDuration = dur + 's';
+        p.style.animationDelay = (Math.random() * dur) + 's';
+        const size = 1 + Math.random() * 2.5;
+        p.style.width = size + 'px';
+        p.style.height = size + 'px';
+        p.style.opacity = 0;
+        container.appendChild(p);
+      }
+    })();
+  </script>
+
+</body>
+</html>
